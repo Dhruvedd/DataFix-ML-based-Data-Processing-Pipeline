@@ -4,3 +4,4 @@ data.csv
 data2.csv
 venv
 my_finetuned_bert_spam
+labeled_data.csv
