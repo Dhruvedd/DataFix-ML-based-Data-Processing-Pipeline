@@ -1,12 +1,22 @@
-# React + Vite
+DataFix
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Overview:
+A web application to automate data processing and filteration through Machine Learning as well as human supervision.
+The application accepts data as csv or xlsx, in a certain format(accepted format can be changed), it then uses a pre-trained machine learning model to classify rows of data as spam or not spam(or any other binary classification). After that, the rows of data that the model is unsure about are sent to the front end to be manually classified one by one through human supervision. Finally, the user is able to download a fully labelled version of the dataset.
 
-Currently, two official plugins are available:
+How to use it:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Step 1: Specify the format of the data and obtain a labelled sample of the dataset - format specified in ML.py.
 
-## Expanding the ESLint configuration
+Step 2: Use the labelled sample and run ML.py to train a Machine Learning model to classify data.
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Step 3: Tweak hyperparameters and keep training until desired accuracy is achieved.
+
+Step 4: Model will be save to "Training/my_finetuned_bert_spam", run the app and upload unlabelled data to process it.
+
+To tweak specific functionality and/or endpoints, change file app.py and src\Services\api.js
+
+How it works:
+
+The frontend was built using React and Vite.
+The backend functions using FastAPI endpoints that cater to specific functionality, predict works
