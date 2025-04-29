@@ -1,0 +1,28 @@
+/* Additional styles for Label component beyond Tailwind classes */
+label {
+    cursor: pointer;
+    transition: color 0.2s ease-in-out;
+  }
+  
+  label:hover {
+    color: #4b5563;
+  }
+  
+  /* Required indicator */
+  label.required::after {
+    content: "*";
+    color: #ef4444;
+    margin-left: 0.25rem;
+  }
+  
+  /* Disabled state */
+  label.disabled {
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+  
+  /* Focus state - when associated input is focused */
+  .label-group:focus-within label {
+    color: #2563eb;
+  }
+  

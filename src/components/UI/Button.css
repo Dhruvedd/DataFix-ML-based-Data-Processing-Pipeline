@@ -1,0 +1,48 @@
+/* Additional styles for Button component beyond Tailwind classes */
+.button-focus-ring {
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  
+  /* Custom animation for button click */
+  @keyframes button-press {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(0.97);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  button:active:not(:disabled) {
+    animation: button-press 0.2s ease-in-out;
+  }
+  
+  /* Custom styles for loading state if needed */
+  .button-loading {
+    position: relative;
+    color: transparent !important;
+  }
+  
+  .button-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: white;
+    transform: translate(-50%, -50%);
+    animation: spin 0.8s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+  

@@ -1,0 +1,82 @@
+/* Additional styles for Table component beyond Tailwind classes */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  /* Hover effect for table rows */
+  tbody tr:hover {
+    background-color: rgba(243, 244, 246, 0.5);
+  }
+  
+  /* Sticky header */
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  /* Responsive table container */
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Striped rows */
+  tbody tr:nth-child(even) {
+    background-color: rgba(249, 250, 251, 0.5);
+  }
+  
+  /* Border radius for first and last cells */
+  thead tr:first-child th:first-child {
+    border-top-left-radius: 0.5rem;
+  }
+  
+  thead tr:first-child th:last-child {
+    border-top-right-radius: 0.5rem;
+  }
+  
+  tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 0.5rem;
+  }
+  
+  tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 0.5rem;
+  }
+  
+  /* Empty state */
+  .table-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+    font-style: italic;
+  }
+  
+  /* Loading state */
+  .table-loading {
+    position: relative;
+    min-height: 200px;
+  }
+  
+  .table-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 3px solid rgba(209, 213, 219, 0.3);
+    border-top-color: #6b7280;
+    transform: translate(-50%, -50%);
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+  
