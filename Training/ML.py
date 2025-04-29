@@ -176,7 +176,8 @@ def main():
         "f1":        final_metrics.get("eval_f1", None),
     }
     print("\nFinal test metrics:", final_metrics_filtered)
-    trainer.save_model("my_finetuned_bert_spam")
+    trainer.save_model("my_finetuned_bert")
+    tokenizer.save_pretrained("my_finetuned_bert_spam")
     print("Model saved to: my_finetuned_bert_spam")
 
 

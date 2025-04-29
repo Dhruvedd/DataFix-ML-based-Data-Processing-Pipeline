@@ -1,91 +1,96 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
-import io, uuid
-import torch
+from fastapi.responses import StreamingResponse
+import pandas as pd, io, uuid, torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from pydantic import BaseModel
 from typing import List, Dict, Any
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],    # 🔒 lock this down in prod!
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
 
-# 1) Load your fine-tuned BERT model & tokenizer once
-MODEL_PATH = "Training/my_finetuned_bert_spam"  # adjust path
+# — load model + tokenizer —
+MODEL_PATH = "Training/my_finetuned_bert_spam"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 model     = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
 model.eval()
 
-# 2) In‐memory store of results by job_id
-STORE: Dict[str, Dict[str, Any]] = {}
+# in‐memory store per upload
+STORE: Dict[str, Dict[str,Any]] = {}
+
+class LabelInput(BaseModel):
+    job_id: str
+    record_id: int
+    label: str  # "Spam" or "Not Spam"
 
 def predict_probs(texts: List[str]) -> List[float]:
-    """Return P(spam) for each text."""
     enc = tokenizer(texts, padding=True, truncation=True, max_length=128, return_tensors="pt")
     with torch.no_grad():
         logits = model(**enc).logits
-        probs  = torch.softmax(logits, dim=-1)[:,1]
-    return probs.tolist()
+    return torch.softmax(logits, dim=-1)[:,1].tolist()
 
 @app.post("/predict")
-async def predict(
-    file: UploadFile = File(...),
-    threshold: float = 0.8
-) -> Dict[str, str]:
-    """
-    1) Accept CSV or XLSX
-    2) Run model → spam_prob, pred_label
-    3) Split into confident vs uncertain  
-    4) Store under a uuid and return {"id": "..."}
-    """
+async def predict(file: UploadFile = File(...), threshold: float = 0.8):
+    # 1) Read file
     data = await file.read()
     if file.filename.lower().endswith(".xlsx"):
         df = pd.read_excel(io.BytesIO(data))
     else:
         df = pd.read_csv(io.BytesIO(data))
 
-    # recreate your `text` column
-    df["text"] = (
-        df["Ticket name"].fillna("") + " " +
-        df["Ticket description"].fillna("") + " " +
-        df["All associated contact emails"].fillna("")
-    )
+    # 2) Build text, predict
+    df["text"]       = df["Ticket name"].fillna("") + " " + df["Ticket description"].fillna("") + " " + df["All associated contact emails"].fillna("")
+    df["spam_prob"]  = predict_probs(df["text"].tolist())
+    df["pred_label"] = ["Spam" if p>0.5 else "Not Spam" for p in df["spam_prob"]]
 
-    probs = predict_probs(df["text"].tolist())
-    df["spam_prob"]  = probs
-    df["pred_label"] = ["Spam" if p > 0.5 else "Not Spam" for p in probs]
+    # 3) Identify uncertain
+    low, high = 1-threshold, threshold
+    uncertain_mask = (df.spam_prob > low) & (df.spam_prob < high)
+    uncertain_df   = df[uncertain_mask]
 
-    high, low = threshold, 1 - threshold
-    confident = df[(df.spam_prob >= high) | (df.spam_prob <= low)]
-    uncertain  = df[(df.spam_prob > low)  & (df.spam_prob < high)]
+    # 4) Prepare payloads
+    uncertain_tickets = [
+        {"id": int(r["Record ID"]), "text": r["Ticket description"]}
+        for _, r in uncertain_df.iterrows()
+    ]
+    full_records = df.to_dict(orient="records")
 
-    def to_records(sub: pd.DataFrame):
-        return sub[[
-            "Record ID",
-            "Ticket name",
-            "Ticket description",
-            "spam_prob",
-            "pred_label"
-        ]].to_dict(orient="records")
-
+    # 5) Store
     job_id = str(uuid.uuid4())
     STORE[job_id] = {
-        "confident": to_records(confident),
-        "uncertain":  to_records(uncertain)
+        "full": full_records,
+        "manual": {},          # record_id → label
     }
-    return {"id": job_id}
 
-@app.get("/results/{job_id}")
-def results(job_id: str):
-    """Retrieve the stored prediction sets by ID."""
-    if job_id not in STORE:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return STORE[job_id]
+    return {"id": job_id, "uncertainTickets": uncertain_tickets}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.post("/label")
+async def label(hit: LabelInput):
+    job = STORE.get(hit.job_id)
+    if not job:
+        raise HTTPException(404, "Job not found")
+    # record manual override
+    job["manual"][str(hit.record_id)] = hit.label
+    return {"status": "ok"}
+
+@app.get("/download/{job_id}")
+def download(job_id: str):
+    job = STORE.get(job_id)
+    if not job:
+        raise HTTPException(404, "Job not found")
+    # rebuild DF
+    df = pd.DataFrame(job["full"])
+    manual = job["manual"]
+    # apply manual overrides
+    df["final_label"] = df["Record ID"].astype(str).map(manual).fillna(df["pred_label"])
+    # drop helper cols if you like:
+    # df = df.drop(columns=["text","spam_prob","pred_label"])
+    csv = df.to_csv(index=False)
+    return StreamingResponse(
+        io.StringIO(csv),
+        media_type="text/csv",
+        headers={"Content-Disposition":f"attachment; filename=final_{job_id}.csv"}
+    )
