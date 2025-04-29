@@ -18,3 +18,4 @@ package.json
 Training\my_finetuned_bert
 Training\test.csv
 Logo.png
+__pycache__
