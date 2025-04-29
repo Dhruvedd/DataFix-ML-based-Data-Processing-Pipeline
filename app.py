@@ -33,7 +33,7 @@ def predict_probs(texts: List[str]) -> List[float]:
     return torch.softmax(logits, dim=-1)[:,1].tolist()
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...), threshold: float = 0.8):
+async def predict(file: UploadFile = File(...), threshold: float = 0.8): #Threshold can be changed here
     # 1) Read file
     data = await file.read()
     if file.filename.lower().endswith(".xlsx"):
