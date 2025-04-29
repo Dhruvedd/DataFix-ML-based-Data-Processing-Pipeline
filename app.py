@@ -81,16 +81,27 @@ def download(job_id: str):
     job = STORE.get(job_id)
     if not job:
         raise HTTPException(404, "Job not found")
-    # rebuild DF
+
+    # Rebuild the DataFrame from the original full records
     df = pd.DataFrame(job["full"])
     manual = job["manual"]
-    # apply manual overrides
-    df["final_label"] = df["Record ID"].astype(str).map(manual).fillna(df["pred_label"])
-    # drop helper cols if you like:
-    # df = df.drop(columns=["text","spam_prob","pred_label"])
-    csv = df.to_csv(index=False)
+
+    # 1) Apply any human overrides directly to the 'pred_label' column
+    df["pred_label"] = (
+        df["Record ID"].astype(str)
+          .map(manual)                 # map returns NaN for untouched
+          .fillna(df["pred_label"])    # fallback to the model’s guess
+    )
+
+    # 2) Drop helper columns (including any leftover final_label if present)
+    for col in ["text", "spam_prob", "final_label"]:
+        if col in df.columns:
+            df = df.drop(columns=[col])
+
+    # 3) Stream back a CSV without the extra column
+    csv_bytes = df.to_csv(index=False).encode("utf-8")
     return StreamingResponse(
-        io.StringIO(csv),
+        io.BytesIO(csv_bytes),
         media_type="text/csv",
-        headers={"Content-Disposition":f"attachment; filename=final_{job_id}.csv"}
+        headers={"Content-Disposition": f"attachment; filename=labeled_{job_id}.csv"}
     )
