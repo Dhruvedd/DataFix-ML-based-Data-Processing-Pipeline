@@ -6,19 +6,27 @@ The application accepts data as csv or xlsx, in a certain format(accepted format
 
 How to use it:
 
-Step 1: Specify the format of the data and obtain a labelled sample of the dataset - format specified in ML.py.
+Step 0: install requirements.txt to your virtual environment and npm install in your working directory. This is automatically use the given files to install the necessary node modules.
 
-Step 2: Use the labelled sample and run ML.py to train a Machine Learning model to classify data.
+Step 1: Specify the format of the data and obtain a labelled sample of the dataset - format specified in ML.py. N/A if you wish to use the specified format.
 
-Step 3: Tweak hyperparameters and keep training until desired accuracy is achieved.
+Step 2: Use a labelled sample and run ML.py to train a Machine Learning model to classify data. N/A if you already have a pretrained model ready to use.
 
-Step 4: Model will be saved to "Training/my_finetuned_bert_spam".
+Step 3: Tweak hyperparameters and keep training until desired accuracy is achieved. N/A if you already have a pretrained model ready to use.
+
+Step 4: Model will be saved to "Training/my_finetuned_bert_spam". Modify Paths in any file wherever necessary.
 
 Step 5: Surity threshold for the model can be edited in app.py, defualt value is set to 0.8.
 
-Step 6: Start the uvicorn, npm run dev and start labelling your unlabelled dataset very efficiently.
+Step 6: Start the uvicorn and the react app, and start labelling your unlabelled dataset very efficiently.
 
 To tweak specific functionality and/or endpoints, change file app.py and src\Services\api.js.
+
+Start the App when in VS Code or similar IDE:
+In different terminals, paste:
+
+Terminal 1: uvicorn app:app --reload --port 8000
+Terminal 2: npm run dev
 
 How it works:
 
