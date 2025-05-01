@@ -11,11 +11,8 @@ node_modules/
 test.py
 dataviz.py
 Training\test.csv
-eslint.config.js
-vite.config.js
-package-lock.json
-package.json
 Training\my_finetuned_bert
 Training\test.csv
 Logo.png
 __pycache__
+Training\my_finetuned_bert
